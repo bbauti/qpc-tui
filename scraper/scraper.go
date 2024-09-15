@@ -86,7 +86,6 @@ func setupMainCollector(c *colly.Collector, links *[]string, additionalClass str
 	})
 
 	c.OnHTML(".pagination a", func(e *colly.HTMLElement) {
-		fmt.Println("Pagination:", e.Text)
 		if e.Text == "Siguiente" {
 			*canContinue = true
 		}

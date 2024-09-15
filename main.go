@@ -78,7 +78,7 @@ func (m model) View() string {
 
 	s := fmt.Sprintf("Checking %s...\n\n", url)
 
-	if m.status > 0 {
+	if m.status > 0 && len(m.entries) > 0 {
 		s += fmt.Sprintf("Status: %d\n", m.status)
 		s += fmt.Sprintf("Can continue: %v\n", m.canContinue)
 		s += fmt.Sprintf("Can go back: %v\n", m.canGoBack)
