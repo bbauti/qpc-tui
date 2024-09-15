@@ -56,12 +56,12 @@ func (k keyMap) FullHelp() [][]key.Binding {
 
 var keys = keyMap{
 	Left: key.NewBinding(
-		key.WithKeys("left", "h"),
-		key.WithHelp("←/h", "move left"),
+		key.WithKeys("left", "j"),
+		key.WithHelp("←/j", "move left"),
 	),
 	Right: key.NewBinding(
-		key.WithKeys("right", "l"),
-		key.WithHelp("→/l", "move right"),
+		key.WithKeys("right", "k"),
+		key.WithHelp("→/k", "move right"),
 	),
 	Help: key.NewBinding(
 		key.WithKeys("?"),
