@@ -4,11 +4,15 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
+	"github.com/charmbracelet/bubbles/help"
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"golang.org/x/term"
 	"qpc-tui/scraper"
 )
 
@@ -22,10 +26,51 @@ type model struct {
 	canGoBack   bool
 	err         error
 
-	fetching bool
-	quitting bool
-	fetchCmd tea.Cmd
-	spinner  spinner.Model
+	keys       keyMap
+	help       help.Model
+	inputStyle lipgloss.Style
+	lastKey    string
+	fetching   bool
+	quitting   bool
+	fetchCmd   tea.Cmd
+	spinner    spinner.Model
+}
+
+type keyMap struct {
+	Left  key.Binding
+	Right key.Binding
+	Help  key.Binding
+	Quit  key.Binding
+}
+
+func (k keyMap) ShortHelp() []key.Binding {
+	return []key.Binding{k.Help, k.Quit}
+}
+
+func (k keyMap) FullHelp() [][]key.Binding {
+	return [][]key.Binding{
+		{k.Left, k.Right},
+		{k.Help, k.Quit},
+	}
+}
+
+var keys = keyMap{
+	Left: key.NewBinding(
+		key.WithKeys("left", "h"),
+		key.WithHelp("←/h", "move left"),
+	),
+	Right: key.NewBinding(
+		key.WithKeys("right", "l"),
+		key.WithHelp("→/l", "move right"),
+	),
+	Help: key.NewBinding(
+		key.WithKeys("?"),
+		key.WithHelp("?", "toggle help"),
+	),
+	Quit: key.NewBinding(
+		key.WithKeys("q", "esc", "ctrl+c"),
+		key.WithHelp("q", "quit"),
+	),
 }
 
 type statusMsg int
@@ -67,6 +112,9 @@ func initialModel() model {
 		currentPage: 1,
 		spinner:     s,
 		fetching:    true,
+		keys:        keys,
+		help:        help.New(),
+		inputStyle:  lipgloss.NewStyle().Foreground(lipgloss.Color("#FF75B7")),
 	}
 }
 
@@ -110,22 +158,26 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(cmd, m.spinner.Tick)
 
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "right", "l":
-			if !m.canContinue || m.fetching {
-				return m, nil
-			}
-			m.fetching = true
-			m.fetchCmd = fetchEntries(m.currentPage + 1)
-			return m, tea.Batch(m.spinner.Tick, m.fetchCmd)
-		case "left", "k":
+		switch {
+		case key.Matches(msg, m.keys.Left):
 			if !m.canGoBack || m.fetching {
 				return m, nil
 			}
 			m.fetching = true
 			m.fetchCmd = fetchEntries(m.currentPage - 1)
+			m.lastKey = "←"
 			return m, m.fetchCmd
-		case "q", "ctrl+c":
+		case key.Matches(msg, m.keys.Right):
+			if !m.canContinue || m.fetching {
+				return m, nil
+			}
+			m.fetching = true
+			m.fetchCmd = fetchEntries(m.currentPage + 1)
+			m.lastKey = "→"
+			return m, tea.Batch(m.spinner.Tick, m.fetchCmd)
+		case key.Matches(msg, m.keys.Help):
+			m.help.ShowAll = !m.help.ShowAll
+		case key.Matches(msg, m.keys.Quit):
 			m.quitting = true
 			return m, tea.Quit
 		}
@@ -135,6 +187,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
+	_, h, _ := term.GetSize(int(os.Stdout.Fd()))
+
 	if m.err != nil {
 		return fmt.Sprintf("\nWe had some trouble: %v\n\n", m.err)
 	}
@@ -151,19 +205,21 @@ func (m model) View() string {
 		s += fmt.Sprintf("Can go back: %v\n", m.canGoBack)
 		s += fmt.Sprintf("Current page: %d\n", m.currentPage)
 		s += fmt.Sprintf("Entries: %d\n", len(m.entries))
+
+		for index, entry := range m.entries {
+			s += fmt.Sprintf("%d. %s\n", index+1, entry.Title)
+		}
 	}
 
-	// help section
-	s += "\nControls:\n"
-	if m.canGoBack {
-		s += "  <- left\n"
-	}
-	if m.canContinue {
-		s += "  -> right\n"
-	}
-	s += "  q quit\n"
+	helpView := m.help.View(m.keys)
 
-	return "\n" + s + "\n\n"
+	remainingLines := h - strings.Count(s, "\n") - strings.Count(helpView, "\n") - 1
+
+	s += strings.Repeat("\n", remainingLines)
+
+	s += helpView
+
+	return s
 }
 
 func main() {
