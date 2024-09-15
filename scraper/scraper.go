@@ -63,7 +63,7 @@ func parseSpanishDate(dateStr string) (time.Time, error) {
 }
 
 func setupCollectors(c *colly.Collector, links *[]string, articles *[]Article, mu *sync.Mutex, wg *sync.WaitGroup, canContinue *bool, canGoBack *bool) {
-	setupMainCollector(c, links, ".categoria_8", canContinue, canGoBack)
+	setupMainCollector(c, links, "", canContinue, canGoBack)
 	contentCollector := setupContentCollector(c, articles, mu)
 	setupOnScrapedCallback(c, contentCollector, links, wg)
 }

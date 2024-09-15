@@ -6,7 +6,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"qpc-tui/scraper"
 )
 
@@ -19,6 +21,11 @@ type model struct {
 	canContinue bool
 	canGoBack   bool
 	err         error
+
+	fetching bool
+	quitting bool
+	fetchCmd tea.Cmd
+	spinner  spinner.Model
 }
 
 type statusMsg int
@@ -37,38 +44,94 @@ func checkServer() tea.Msg {
 	return statusMsg(res.StatusCode)
 }
 
+func fetchEntries(page int) tea.Cmd {
+	return func() tea.Msg {
+		entries, canContinue, canGoBack, err := scraper.ScrapePage(page)
+		if err != nil {
+			return errMsg{err}
+		}
+		return struct {
+			entries     []scraper.Article
+			canContinue bool
+			canGoBack   bool
+			page        int
+		}{entries, canContinue, canGoBack, page}
+	}
+}
+
+func initialModel() model {
+	s := spinner.New()
+	s.Spinner = spinner.Dot
+	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
+	return model{
+		currentPage: 1,
+		spinner:     s,
+		fetching:    true,
+	}
+}
+
 func (m model) Init() tea.Cmd {
-	return checkServer
+	return tea.Batch(m.spinner.Tick, checkServer, fetchEntries(m.currentPage))
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
 	switch msg := msg.(type) {
+	case spinner.TickMsg:
+		m.spinner, cmd = m.spinner.Update(msg)
+		return m, cmd
 
 	case statusMsg:
 		m.status = int(msg)
-		if m.status == 200 {
-			entries, canContinue, canGoBack, err := scraper.ScrapePage(m.currentPage)
-			if err != nil {
-				fmt.Println("Error scraping page:", err)
-			} else {
-				m.entries = entries
-				m.canContinue = canContinue
-				m.canGoBack = canGoBack
-			}
+		if m.status == 200 && m.fetchCmd == nil {
+			m.fetchCmd = fetchEntries(m.currentPage)
+			return m, tea.Batch(m.spinner.Tick, m.fetchCmd)
 		}
-		return m, tea.Quit
+		return m, nil
 
 	case errMsg:
 		m.err = msg
+		m.fetching = false
+		m.fetchCmd = nil
 		return m, tea.Quit
 
+	case struct {
+		entries     []scraper.Article
+		canContinue bool
+		canGoBack   bool
+		page        int
+	}:
+		m.entries = msg.entries
+		m.canContinue = msg.canContinue
+		m.canGoBack = msg.canGoBack
+		m.currentPage = msg.page
+		m.fetching = false
+		m.fetchCmd = nil
+		return m, tea.Batch(cmd, m.spinner.Tick)
+
 	case tea.KeyMsg:
-		if msg.Type == tea.KeyCtrlC {
+		switch msg.String() {
+		case "right", "l":
+			if !m.canContinue || m.fetching {
+				return m, nil
+			}
+			m.fetching = true
+			m.fetchCmd = fetchEntries(m.currentPage + 1)
+			return m, tea.Batch(m.spinner.Tick, m.fetchCmd)
+		case "left", "k":
+			if !m.canGoBack || m.fetching {
+				return m, nil
+			}
+			m.fetching = true
+			m.fetchCmd = fetchEntries(m.currentPage - 1)
+			return m, m.fetchCmd
+		case "q", "ctrl+c":
+			m.quitting = true
 			return m, tea.Quit
 		}
 	}
 
-	return m, nil
+	return m, cmd
 }
 
 func (m model) View() string {
@@ -76,23 +139,36 @@ func (m model) View() string {
 		return fmt.Sprintf("\nWe had some trouble: %v\n\n", m.err)
 	}
 
-	s := fmt.Sprintf("Checking %s...\n\n", url)
+	s := fmt.Sprintf("Chacabuco en Red TUI. Page %d\n\n", m.currentPage)
 
-	if m.status > 0 && len(m.entries) > 0 {
+	if m.fetching {
+		s += m.spinner.View() + " Loading...\n"
+	} else if m.quitting {
+		s += "Bye!\n"
+	} else if m.status > 0 && len(m.entries) > 0 {
 		s += fmt.Sprintf("Status: %d\n", m.status)
 		s += fmt.Sprintf("Can continue: %v\n", m.canContinue)
 		s += fmt.Sprintf("Can go back: %v\n", m.canGoBack)
 		s += fmt.Sprintf("Current page: %d\n", m.currentPage)
 		s += fmt.Sprintf("Entries: %d\n", len(m.entries))
-	} else {
-		s += "Loading..."
 	}
+
+	// help section
+	s += "\nControls:\n"
+	if m.canGoBack {
+		s += "  <- left\n"
+	}
+	if m.canContinue {
+		s += "  -> right\n"
+	}
+	s += "  q quit\n"
 
 	return "\n" + s + "\n\n"
 }
 
 func main() {
-	if _, err := tea.NewProgram(model{}).Run(); err != nil {
+	p := tea.NewProgram(initialModel(), tea.WithAltScreen())
+	if _, err := p.Run(); err != nil {
 		fmt.Printf("Uh oh, there was an error: %v\n", err)
 		os.Exit(1)
 	}
