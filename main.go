@@ -13,12 +13,106 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"golang.org/x/term"
+
+	"context"
+	"errors"
+	"net"
+	"os/signal"
+	"syscall"
+
+	"github.com/charmbracelet/log"
+	"github.com/charmbracelet/ssh"
+	"github.com/charmbracelet/wish"
+	"github.com/charmbracelet/wish/activeterm"
+	"github.com/charmbracelet/wish/bubbletea"
+	"github.com/charmbracelet/wish/logging"
+
 	"qpc-tui/scraper"
 )
 
-const url = "https://quepensaschacabuco.com/"
+const (
+	host = "localhost"
+	port = "23234"
+	url  = "https://quepensaschacabuco.com/"
+)
+
+func main() {
+	s, err := wish.NewServer(
+		wish.WithAddress(net.JoinHostPort(host, port)),
+		wish.WithHostKeyPath(".ssh/id_ed25519"),
+		wish.WithMiddleware(
+			bubbletea.Middleware(teaHandler),
+			activeterm.Middleware(),
+			logging.Middleware(),
+		),
+	)
+	if err != nil {
+		log.Error("Could not start server", "error", err)
+	}
+
+	done := make(chan os.Signal, 1)
+	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+	log.Info("Starting SSH server", "host", host, "port", port)
+	go func() {
+		if err = s.ListenAndServe(); err != nil && !errors.Is(err, ssh.ErrServerClosed) {
+			log.Error("Could not start server", "error", err)
+			done <- nil
+		}
+	}()
+
+	<-done
+	log.Info("Stopping SSH server")
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer func() { cancel() }()
+	if err := s.Shutdown(ctx); err != nil && !errors.Is(err, ssh.ErrServerClosed) {
+		log.Error("Could not stop server", "error", err)
+	}
+}
+
+func teaHandler(s ssh.Session) (tea.Model, []tea.ProgramOption) {
+	pty, _, _ := s.Pty()
+
+	renderer := bubbletea.MakeRenderer(s)
+	txtStyle := renderer.NewStyle().Foreground(lipgloss.Color("10"))
+	quitStyle := renderer.NewStyle().Foreground(lipgloss.Color("8"))
+
+	bg := "light"
+	if renderer.HasDarkBackground() {
+		bg = "dark"
+	}
+
+	sp := spinner.New()
+	sp.Spinner = spinner.Dot
+	sp.Style = renderer.NewStyle().Foreground(lipgloss.Color("205"))
+
+	m := model{
+		term:      pty.Term,
+		profile:   renderer.ColorProfile().Name(),
+		width:     pty.Window.Width,
+		height:    pty.Window.Height,
+		bg:        bg,
+		txtStyle:  txtStyle,
+		quitStyle: quitStyle,
+
+		currentPage: 1,
+		spinner:     sp,
+		fetching:    true,
+		keys:        keys,
+		help:        help.New(),
+		inputStyle:  renderer.NewStyle().Foreground(lipgloss.Color("#FF75B7")),
+	}
+	return m, []tea.ProgramOption{tea.WithAltScreen()}
+}
 
 type model struct {
+	term      string
+	profile   string
+	width     int
+	height    int
+	bg        string
+	txtStyle  lipgloss.Style
+	quitStyle lipgloss.Style
+
 	status      int
 	currentPage int
 	entries     []scraper.Article
@@ -101,20 +195,6 @@ func fetchEntries(page int) tea.Cmd {
 			canGoBack   bool
 			page        int
 		}{entries, canContinue, canGoBack, page}
-	}
-}
-
-func initialModel() model {
-	s := spinner.New()
-	s.Spinner = spinner.Dot
-	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
-	return model{
-		currentPage: 1,
-		spinner:     s,
-		fetching:    true,
-		keys:        keys,
-		help:        help.New(),
-		inputStyle:  lipgloss.NewStyle().Foreground(lipgloss.Color("#FF75B7")),
 	}
 }
 
@@ -220,12 +300,4 @@ func (m model) View() string {
 	s += helpView
 
 	return s
-}
-
-func main() {
-	p := tea.NewProgram(initialModel(), tea.WithAltScreen())
-	if _, err := p.Run(); err != nil {
-		fmt.Printf("Uh oh, there was an error: %v\n", err)
-		os.Exit(1)
-	}
 }
