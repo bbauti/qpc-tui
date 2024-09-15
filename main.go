@@ -31,7 +31,7 @@ import (
 )
 
 const (
-	host = "localhost"
+	host = "0.0.0.0"
 	port = "23234"
 	url  = "https://quepensaschacabuco.com/"
 )
@@ -267,7 +267,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
-	_, h, _ := term.GetSize(int(os.Stdout.Fd()))
+	_, h, err := term.GetSize(int(os.Stdout.Fd()))
+	if err != nil {
+		h = 24
+	}
 
 	if m.err != nil {
 		return fmt.Sprintf("\nWe had some trouble: %v\n\n", m.err)
@@ -294,8 +297,9 @@ func (m model) View() string {
 	helpView := m.help.View(m.keys)
 
 	remainingLines := h - strings.Count(s, "\n") - strings.Count(helpView, "\n") - 1
-
-	s += strings.Repeat("\n", remainingLines)
+	if remainingLines > 0 {
+		s += strings.Repeat("\n", remainingLines)
+	}
 
 	s += helpView
 
