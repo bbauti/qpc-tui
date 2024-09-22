@@ -24,7 +24,9 @@ func (m Model) View() string {
 
 	var tabItems []string
 	for i, item := range navigationMenuItems {
-			if i == m.CurrentCategory {
+			if m.SelectedEntry != nil {
+					tabItems = append(tabItems, lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render(item))
+			} else if i == m.CurrentCategory {
 					tabItems = append(tabItems, lipgloss.NewStyle().Background(lipgloss.Color("205")).Foreground(lipgloss.Color("0")).Render(item))
 			} else {
 					tabItems = append(tabItems, lipgloss.NewStyle().Render(item))
@@ -73,6 +75,13 @@ func (m Model) View() string {
 			content = m.Spinner.View() + " Obteniendo entradas..."
 	} else if m.Quitting {
 			content = "Bye!"
+	} else if m.SelectedEntry != nil {
+			content = fmt.Sprintf("Title: %v\n", m.SelectedEntry.Title)
+			content += fmt.Sprintf("Date: %v\n", m.SelectedEntry.Date)
+			content += fmt.Sprintf("Category: %v\n", m.SelectedEntry.Category)
+			content += fmt.Sprintf("CategoryId: %v\n", m.SelectedEntry.CategoryId)
+			content += fmt.Sprintf("Body: %v\n", m.SelectedEntry.Body)
+			content += fmt.Sprintf("Link: %v\n", m.SelectedEntry.Link)
 	} else if m.Status > 0 && len(m.Entries) > 0 {
 			filteredEntries := filterEntriesByCategory(m.Entries, m.CurrentCategory)
 			m.List.SetItems(entriesToListItems(filteredEntries))
@@ -88,6 +97,9 @@ func (m Model) View() string {
 	contentHeight := m.Height - 11 // Subtract space for header, help, and margins
 	if m.Help.ShowAll {
 		contentHeight -= strings.Count(helpView, "\n") + 1
+	}
+	if (m.SelectedEntry != nil) {
+		contentHeight += strings.Count(content, "\n") + 2
 	}
 
 	// Ensure the content doesn't exceed the available height
@@ -127,6 +139,16 @@ func (m Model) View() string {
 		return lipgloss.JoinVertical(
 			lipgloss.Left,
 			loadingContent,
+		)
+	}
+
+	if m.SelectedEntry != nil {
+		return lipgloss.JoinVertical(
+			lipgloss.Left,
+			titleAndNavigation,
+			content,
+			"\n",
+			helpView,
 		)
 	}
 

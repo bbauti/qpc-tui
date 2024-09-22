@@ -137,9 +137,26 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.List.SetSize(m.Width, m.Height-helpHeight-3) // Adjust for header, help, and margins
 			return m, nil
 		case key.Matches(msg, m.Keys.Tab):
+			if m.SelectedEntry != nil {
+				return m, nil
+			}
 			m.CurrentCategory = (m.CurrentCategory + 1) % 4
-			return m, fetchEntries(m.CurrentPage)
+			return m, nil
+		case key.Matches(msg, m.Keys.Enter):
+			// find the entry in the entries that has the same title(title) and date(description) as the selected item
+			selectedItem := m.List.SelectedItem().(item)
+			for _, entry := range m.Entries {
+				if entry.Title == selectedItem.Title() && entry.Date == selectedItem.Description() {
+					m.SelectedEntry = &entry
+					break
+				}
+			}
+			return m, nil
 		case key.Matches(msg, m.Keys.Quit):
+			if m.SelectedEntry != nil {
+				m.SelectedEntry = nil
+				return m, nil
+			}
 			m.Quitting = true
 			return m, tea.Quit
 		}

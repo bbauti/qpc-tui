@@ -9,13 +9,14 @@ type KeyMap struct {
 	Prev   key.Binding
 	Up     key.Binding
 	Down   key.Binding
+	Enter  key.Binding
 	Help   key.Binding
 	Quit   key.Binding
 	Tab    key.Binding
 }
 
 func (k KeyMap) ShortHelp() []key.Binding {
-	return []key.Binding{k.Help, k.Quit}
+	return []key.Binding{k.Left, k.Right, k.Enter, k.Tab, k.Help, k.Quit}
 }
 
 func (k KeyMap) FullHelp() [][]key.Binding {
@@ -23,7 +24,8 @@ func (k KeyMap) FullHelp() [][]key.Binding {
 		{k.Left, k.Right},
 		{k.Up, k.Down},
 		{k.Next, k.Prev},
-		{k.Help, k.Quit, k.Tab},
+		{k.Enter, k.Tab},
+		{k.Help, k.Quit},
 	}
 }
 
@@ -52,13 +54,17 @@ var Keys = KeyMap{
 		key.WithKeys("h"),
 		key.WithHelp("h", "subir pagina "),
 	),
+	Enter: key.NewBinding(
+		key.WithKeys("enter"),
+		key.WithHelp("enter", "ver articulo"),
+	),
 	Help: key.NewBinding(
 		key.WithKeys("?"),
 		key.WithHelp("?", "mostrar ayuda"),
 	),
 	Quit: key.NewBinding(
 		key.WithKeys("q", "esc", "ctrl+c"),
-		key.WithHelp("q", "salir"),
+		key.WithHelp("q", "salir / volver atrás"),
 	),
 	Tab: key.NewBinding(
 		key.WithKeys("tab"),

@@ -30,6 +30,7 @@ type Model struct {
 	Err         error
 
 	CurrentCategory int // 0: all (0), 1: policiales (8), 2: sociedad (48), 3: automotores (75)
+	SelectedEntry		*scraper.Article
 
 	Keys         ui.KeyMap
 	Help         help.Model
@@ -77,6 +78,7 @@ func InitialModel(s ssh.Session) (tea.Model, []tea.ProgramOption) {
 		QuitStyle: quitStyle,
 
 		CurrentCategory: 0,
+		SelectedEntry: nil,
 
 		CurrentPage: 0,
 		Spinner:     sp,
