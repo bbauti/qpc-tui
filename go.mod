@@ -20,6 +20,7 @@ require (
 	github.com/antchfx/htmlquery v1.2.3 // indirect
 	github.com/antchfx/xmlquery v1.2.4 // indirect
 	github.com/antchfx/xpath v1.1.8 // indirect
+	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/charmbracelet/keygen v0.5.1 // indirect
 	github.com/charmbracelet/x/ansi v0.2.3 // indirect
@@ -43,6 +44,7 @@ require (
 	github.com/muesli/cancelreader v0.2.2 // indirect
 	github.com/muesli/termenv v0.15.3-0.20240509142007-81b8f94111d5 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
+	github.com/sahilm/fuzzy v0.1.1 // indirect
 	github.com/saintfish/chardet v0.0.0-20120816061221-3af4cd4741ca // indirect
 	github.com/temoto/robotstxt v1.1.1 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect

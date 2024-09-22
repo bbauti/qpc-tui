@@ -2,48 +2,93 @@ package app
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
-	"golang.org/x/term"
+	"github.com/charmbracelet/lipgloss"
 )
 
 func (m Model) View() string {
-	_, h, err := term.GetSize(int(os.Stdout.Fd()))
-	if err != nil {
-		h = 24
-	}
-
 	if m.Err != nil {
-		return fmt.Sprintf("\nWe had some trouble: %v\n\n", m.Err)
+		return fmt.Sprintf("\nOcurrió un error: %v\n\n", m.Err)
 	}
 
-	s := fmt.Sprintf("Chacabuco en Red TUI. Page %d\n\n", m.CurrentPage)
+	headerStyle := lipgloss.NewStyle().
+		MarginTop(1).
+		Width(m.Width).
+		Align(lipgloss.Center).
+		Bold(true).
+		Foreground(lipgloss.Color("205"))
 
+	header := headerStyle.Render(fmt.Sprintf("Chacabuco en Red TUI - Page %d", m.CurrentPage))
+
+	var content string
 	if m.Fetching {
-		s += m.Spinner.View() + " Loading...\n"
+		content = m.Spinner.View() + " Obteniendo entradas..."
 	} else if m.Quitting {
-		s += "Bye!\n"
+		content = "Bye!"
 	} else if m.Status > 0 && len(m.Entries) > 0 {
-		s += fmt.Sprintf("Status: %d\n", m.Status)
-		s += fmt.Sprintf("Can continue: %v\n", m.CanContinue)
-		s += fmt.Sprintf("Can go back: %v\n", m.CanGoBack)
-		s += fmt.Sprintf("Current page: %d\n", m.CurrentPage)
-		s += fmt.Sprintf("Entries: %d\n", len(m.Entries))
-
-		for index, entry := range m.Entries {
-			s += fmt.Sprintf("%d. %s\n", index+1, entry.Title)
-		}
+		content = m.List.View()
+	} else {
+		content = m.Spinner.View() + " Obteniendo entradas..."
 	}
 
-	helpView := m.Help.View(m.Keys)
+	// add left margin to the help view
+	helpView := lipgloss.NewStyle().MarginLeft(1).Render(m.Help.View(m.Keys))
 
-	remainingLines := h - strings.Count(s, "\n") - strings.Count(helpView, "\n") - 1
-	if remainingLines > 0 {
-		s += strings.Repeat("\n", remainingLines)
+	// Calculate available height for content
+	contentHeight := m.Height - 10 // Subtract space for header, help, and margins
+	if m.Help.ShowAll {
+		contentHeight -= strings.Count(helpView, "\n") + 1
 	}
 
-	s += helpView
+	// Ensure the content doesn't exceed the available height
+	contentLines := strings.Split(content, "\n")
+	if len(contentLines) > contentHeight {
+		content = strings.Join(contentLines[:contentHeight], "\n")
+	}
 
-	return s
+	// Pad the content to ensure consistent height
+	for len(strings.Split(content, "\n")) < contentHeight {
+		content += "\n"
+	}
+
+	navigationStyles := lipgloss.NewStyle().
+		MarginLeft(2)
+
+
+	navigationText := ""
+	if (m.CanGoBack && m.CanContinue) {
+		navigationText = "← →"
+	} else if (m.CanGoBack) {
+		navigationText = "←"
+	} else if (m.CanContinue) {
+		navigationText = "→"
+	}
+
+	navigation := navigationStyles.Render(navigationText)
+
+	if (m.IsFirstFetch) {
+		loadingContent := lipgloss.Place(
+			m.Width,
+			m.Height,
+			lipgloss.Center,
+			lipgloss.Center,
+			"Obteniendo entradas...",
+		)
+		return lipgloss.JoinVertical(
+			lipgloss.Left,
+			loadingContent,
+		)
+	}
+
+	return lipgloss.JoinVertical(
+		lipgloss.Left,
+		header,
+		"\n",
+		content,
+		"\n",
+		navigation,
+		"\n",
+		helpView,
+	)
 }
