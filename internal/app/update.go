@@ -136,6 +136,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			m.List.SetSize(m.Width, m.Height-helpHeight-3) // Adjust for header, help, and margins
 			return m, nil
+		case key.Matches(msg, m.Keys.Tab):
+			m.CurrentCategory = (m.CurrentCategory + 1) % 4
+			return m, fetchEntries(m.CurrentPage)
 		case key.Matches(msg, m.Keys.Quit):
 			m.Quitting = true
 			return m, tea.Quit

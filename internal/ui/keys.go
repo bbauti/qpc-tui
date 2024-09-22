@@ -11,6 +11,7 @@ type KeyMap struct {
 	Down   key.Binding
 	Help   key.Binding
 	Quit   key.Binding
+	Tab    key.Binding
 }
 
 func (k KeyMap) ShortHelp() []key.Binding {
@@ -22,7 +23,7 @@ func (k KeyMap) FullHelp() [][]key.Binding {
 		{k.Left, k.Right},
 		{k.Up, k.Down},
 		{k.Next, k.Prev},
-		{k.Help, k.Quit},
+		{k.Help, k.Quit, k.Tab},
 	}
 }
 
@@ -58,5 +59,9 @@ var Keys = KeyMap{
 	Quit: key.NewBinding(
 		key.WithKeys("q", "esc", "ctrl+c"),
 		key.WithHelp("q", "salir"),
+	),
+	Tab: key.NewBinding(
+		key.WithKeys("tab"),
+		key.WithHelp("tab", "cambiar categoria"),
 	),
 }

@@ -29,6 +29,8 @@ type Model struct {
 	CanGoBack   bool
 	Err         error
 
+	CurrentCategory int // 0: all (0), 1: policiales (8), 2: sociedad (48), 3: automotores (75)
+
 	Keys         ui.KeyMap
 	Help         help.Model
 	InputStyle   lipgloss.Style
@@ -73,6 +75,8 @@ func InitialModel(s ssh.Session) (tea.Model, []tea.ProgramOption) {
 		Bg:        bg,
 		TxtStyle:  txtStyle,
 		QuitStyle: quitStyle,
+
+		CurrentCategory: 0,
 
 		CurrentPage: 0,
 		Spinner:     sp,
