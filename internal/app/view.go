@@ -12,7 +12,7 @@ func (m Model) View() string {
 		return fmt.Sprintf("\nOcurrió un error: %v\n\n", m.Err)
 	}
 
-	headerStyle := lipgloss.NewStyle().
+	headerStyle := m.Renderer.NewStyle().
 		MarginTop(1).
 		Width(m.Width).
 		Align(lipgloss.Center).
@@ -33,7 +33,7 @@ func (m Model) View() string {
 	}
 
 	// add left margin to the help view
-	helpView := lipgloss.NewStyle().MarginLeft(1).Render(m.Help.View(m.Keys))
+	helpView := m.Renderer.NewStyle().MarginLeft(1).Render(m.Help.View(m.Keys))
 
 	// Calculate available height for content
 	contentHeight := m.Height - 10 // Subtract space for header, help, and margins
@@ -52,7 +52,7 @@ func (m Model) View() string {
 		content += "\n"
 	}
 
-	navigationStyles := lipgloss.NewStyle().
+	navigationStyles := m.Renderer.NewStyle().
 		MarginLeft(2)
 
 

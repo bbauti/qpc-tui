@@ -39,6 +39,8 @@ type Model struct {
 	FetchCmd     tea.Cmd
 	Spinner      spinner.Model
 	List         list.Model
+
+	Renderer Renderer
 }
 
 func InitialModel(s ssh.Session) (tea.Model, []tea.ProgramOption) {
@@ -82,6 +84,8 @@ func InitialModel(s ssh.Session) (tea.Model, []tea.ProgramOption) {
 		Help:        help.New(),
 		InputStyle:  renderer.NewStyle().Foreground(lipgloss.Color("#FF75B7")),
 		List:        l,
+
+		Renderer:    Renderer{Session: s},
 	}
 	return m, []tea.ProgramOption{tea.WithAltScreen()}
 }
