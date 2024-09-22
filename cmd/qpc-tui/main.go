@@ -16,6 +16,8 @@ import (
 	"github.com/charmbracelet/wish/bubbletea"
 	"github.com/charmbracelet/wish/logging"
 
+	tea "github.com/charmbracelet/bubbletea"
+
 	"qpc-tui/internal/app"
 )
 
@@ -29,7 +31,10 @@ func main() {
 		wish.WithAddress(net.JoinHostPort(host, port)),
 		wish.WithHostKeyPath(".ssh/id_ed25519"),
 		wish.WithMiddleware(
-			bubbletea.Middleware(app.InitialModel),
+			bubbletea.Middleware(func(s ssh.Session) (tea.Model, []tea.ProgramOption) {
+				m, opts := app.InitialModel(s)
+				return m, append(opts, tea.WithAltScreen())
+		}),
 			activeterm.Middleware(),
 			logging.Middleware(),
 		),
