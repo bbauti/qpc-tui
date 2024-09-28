@@ -84,7 +84,7 @@ func (m Model) View() string {
 				content += bodyRendered
 			}
 			// set an auto margin on top so the link is on the bottom
-			content += lipgloss.NewStyle().MarginTop(m.Height - 20).Align(lipgloss.Center).Foreground(lipgloss.Color("8")).Render(fmt.Sprintf(m.SelectedEntry.Link))
+			content += m.renderer.NewStyle().Width(m.Width-4).MarginTop(m.Height - 20).Align(lipgloss.Center).Foreground(lipgloss.Color("8")).Render(fmt.Sprintf(m.SelectedEntry.Link))
 	} else if m.Status > 0 && len(m.Entries) > 0 {
 			filteredEntries := filterEntriesByCategory(m.Entries, m.CurrentCategory)
 			m.List.SetItems(entriesToListItems(filteredEntries))

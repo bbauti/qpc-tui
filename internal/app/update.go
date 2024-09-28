@@ -88,6 +88,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.IsFirstFetch = false
 		m.FetchCmd = nil
 
+		if (m.CanGoBack) {
+			m.Keys.Left.Enabled = true
+		} else {
+			m.Keys.Left.Enabled = false
+		}
+		if (m.CanContinue) {
+			m.Keys.Right.Enabled = true
+		} else {
+			m.Keys.Right.Enabled = false
+		}
+
 		sort.Slice(m.Entries, func(i, j int) bool {
 			return m.Entries[i].Date > m.Entries[j].Date
 		})
@@ -112,23 +123,23 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 		switch {
-		case key.Matches(msg, m.Keys.Left):
-			if !m.CanGoBack || m.Fetching || m.SelectedEntry != nil {
+		case key.Matches(msg, m.Keys.Left.Binding) && m.Keys.Left.Enabled:
+			if m.Fetching {
 				return m, nil
 			}
 			m.Fetching = true
 			m.FetchCmd = fetchEntries(m.CurrentPage - 1)
 			m.LastKey = "←"
 			return m, m.FetchCmd
-		case key.Matches(msg, m.Keys.Right):
-			if !m.CanContinue || m.Fetching || m.SelectedEntry != nil {
+		case key.Matches(msg, m.Keys.Right.Binding) && m.Keys.Right.Enabled:
+			if m.Fetching {
 				return m, nil
 			}
 			m.Fetching = true
 			m.FetchCmd = fetchEntries(m.CurrentPage + 1)
 			m.LastKey = "→"
 			return m, tea.Batch(m.Spinner.Tick, m.FetchCmd)
-		case key.Matches(msg, m.Keys.Help):
+		case key.Matches(msg, m.Keys.Help.Binding) && m.Keys.Help.Enabled:
 			m.Help.ShowAll = !m.Help.ShowAll
 			helpHeight := 1
 			if m.Help.ShowAll {
@@ -136,28 +147,29 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			m.List.SetSize(m.Width, m.Height-helpHeight-3) // Adjust for header, help, and margins
 			return m, nil
-		case key.Matches(msg, m.Keys.Tab):
-			if m.SelectedEntry != nil {
-				return m, nil
-			}
+		case key.Matches(msg, m.Keys.Tab.Binding) && m.Keys.Tab.Enabled:
 			m.CurrentCategory = (m.CurrentCategory + 1) % 4
 			return m, nil
-		case key.Matches(msg, m.Keys.Enter):
-			if m.SelectedEntry != nil {
-				return m, nil
-			}
-			// find the entry in the entries that has the same title(title) and date(description) as the selected item
+		case key.Matches(msg, m.Keys.Enter.Binding) && m.Keys.Enter.Enabled:
 			selectedItem := m.List.SelectedItem().(item)
 			for _, entry := range m.Entries {
 				if entry.Title == selectedItem.Title() && entry.Date == selectedItem.Description() {
 					m.SelectedEntry = &entry
+					m.Keys.Enter.Enabled = false
+					m.Keys.Tab.Enabled = false
+					m.Keys.Left.Enabled = false
+					m.Keys.Right.Enabled = false
 					break
 				}
 			}
 			return m, nil
-		case key.Matches(msg, m.Keys.Quit):
+		case key.Matches(msg, m.Keys.Quit.Binding) && m.Keys.Quit.Enabled:
 			if m.SelectedEntry != nil {
 				m.SelectedEntry = nil
+				m.Keys.Enter.Enabled = true
+				m.Keys.Tab.Enabled = true
+				m.Keys.Left.Enabled = true
+				m.Keys.Right.Enabled = true
 				return m, nil
 			}
 			m.Quitting = true
