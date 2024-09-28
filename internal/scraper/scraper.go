@@ -132,7 +132,6 @@ func parseArticle(e *colly.HTMLElement) *Article {
 		return nil
 	}
 
-	// the body is in a div with class "resumen", i want the entire html
 	articleBody, err := e.DOM.Find(".resumen").Html()
 	if err != nil {
 		log.Printf("Error getting article body: %v", err)

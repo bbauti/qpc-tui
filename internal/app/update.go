@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"time"
 	"fmt"
-	"strings"
 	"sort"
 
 	"github.com/charmbracelet/bubbles/key"
@@ -116,10 +115,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(cmd, m.Spinner.Tick)
 
 	case tea.WindowSizeMsg:
-		m.Width = msg.Width
-		m.Height = msg.Height
-		m.List.SetSize(msg.Width, msg.Height-6)
-		return m, m.List.NewStatusMessage(fmt.Sprintf("Window resized to %dx%d", msg.Width, msg.Height))
+    m.Width = msg.Width
+    m.Height = msg.Height
+    m.List.SetSize(msg.Width, msg.Height-8)
+
+    cmd = m.List.NewStatusMessage(fmt.Sprintf("Window resized to %dx%d", msg.Width, msg.Height))
+
+    return m, cmd
 
 	case tea.KeyMsg:
 		switch {
@@ -141,11 +143,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Batch(m.Spinner.Tick, m.FetchCmd)
 		case key.Matches(msg, m.Keys.Help.Binding) && m.Keys.Help.Enabled:
 			m.Help.ShowAll = !m.Help.ShowAll
-			helpHeight := 1
-			if m.Help.ShowAll {
-				helpHeight = strings.Count(m.Help.View(m.Keys), "\n") + 1
-			}
-			m.List.SetSize(m.Width, m.Height-helpHeight-3) // Adjust for header, help, and margins
 			return m, nil
 		case key.Matches(msg, m.Keys.Tab.Binding) && m.Keys.Tab.Enabled:
 			m.CurrentCategory = (m.CurrentCategory + 1) % 4

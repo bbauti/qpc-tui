@@ -93,5 +93,5 @@ func InitialModel(s ssh.Session) (tea.Model, []tea.ProgramOption) {
 
 		renderer: renderer,
 	}
-	return m, []tea.ProgramOption{tea.WithAltScreen(), tea.WithMouseCellMotion()}
+	return m, []tea.ProgramOption{tea.WithAltScreen()}
 }

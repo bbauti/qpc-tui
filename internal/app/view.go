@@ -40,30 +40,25 @@ func (m Model) View() string {
 			Foreground(lipgloss.Color("8")).
 			Render(fmt.Sprintf("Chacabuco en Red TUI - Page %d", m.CurrentPage))
 
-	// Create a style for each tab item with vertical borders
 	tabStyle := m.renderer.NewStyle().
 			Border(lipgloss.NormalBorder(), false, false, false, true).
 			BorderForeground(lipgloss.Color("8")).
 			PaddingLeft(1).
 			PaddingRight(1)
 
-	// Apply the style to each tab item
 	styledTabs := make([]string, len(tabItems))
 	for i, tab := range tabItems {
 			styledTabs[i] = tabStyle.Render(tab)
 	}
 
-	// Join the styled tabs
 	navigationMenuContent := lipgloss.JoinHorizontal(lipgloss.Center, styledTabs...)
 
-	// Join title and navigationMenuContent horizontally
 	titleAndNavigation := lipgloss.JoinHorizontal(
 			lipgloss.Center,
 			title,
 			navigationMenuContent,
 	)
 
-	// Add a border around the entire titleAndNavigation
 	titleAndNavigation = m.renderer.NewStyle().
 			Border(lipgloss.NormalBorder()).
 			BorderForeground(lipgloss.Color("8")).
@@ -78,15 +73,15 @@ func (m Model) View() string {
 	} else if m.Quitting {
 			content = "Bye!"
 	} else if m.SelectedEntry != nil {
-			wrappedBody := wordwrap.String(m.SelectedEntry.Body, m.Width-8)
+		wrappedBody := wordwrap.String(m.SelectedEntry.Body, m.Width-8)
 
-			bodyRendered, err := glamour.Render(wrappedBody, "dark")
-			if err != nil {
-				content += fmt.Sprintf("Error rendering body: %v\n", err)
-			} else {
-				content += bodyRendered
-			}
-			content += m.renderer.NewStyle().Width(m.Width-4).MarginTop(m.Height - 20).Align(lipgloss.Center).Foreground(lipgloss.Color("8")).Render(fmt.Sprintf(m.SelectedEntry.Link))
+    bodyRendered, err := glamour.Render(wrappedBody, "dark")
+    if err != nil {
+        content += fmt.Sprintf("Error rendering body: %v\n", err)
+    } else {
+        content += bodyRendered
+    }
+    content += m.renderer.NewStyle().Width(m.Width-4).MarginTop(m.Height-8).Align(lipgloss.Center).Foreground(lipgloss.Color("8")).Render(fmt.Sprintf(m.SelectedEntry.Link))
 	} else if m.Status > 0 && len(m.Entries) > 0 {
 			filteredEntries := filterEntriesByCategory(m.Entries, m.CurrentCategory)
 			m.List.SetItems(entriesToListItems(filteredEntries))
@@ -95,43 +90,21 @@ func (m Model) View() string {
 			content = m.Spinner.View() + " Obteniendo entradas..."
 	}
 
-	// add left margin to the help view
 	helpView := m.renderer.NewStyle().MarginLeft(1).Render(m.Help.View(m.Keys))
 
-	// Calculate available height for content
-	contentHeight := m.Height - 11 // Subtract space for header, help, and margins
+	contentHeight := m.Height-8
 	if m.Help.ShowAll {
-		contentHeight -= strings.Count(helpView, "\n") + 1
-	}
-	if (m.SelectedEntry != nil) {
-		contentHeight += 3
+		contentHeight += 1
 	}
 
-	// Ensure the content doesn't exceed the available height
 	contentLines := strings.Split(content, "\n")
 	if len(contentLines) > contentHeight {
 		content = strings.Join(contentLines[:contentHeight], "\n")
 	}
 
-	// Pad the content to ensure consistent height
 	for len(strings.Split(content, "\n")) < contentHeight {
 		content += "\n"
 	}
-
-	navigationStyles := m.renderer.NewStyle().
-		MarginLeft(2)
-
-
-	navigationText := ""
-	if (m.CanGoBack && m.CanContinue) {
-		navigationText = "← →"
-	} else if (m.CanGoBack) {
-		navigationText = "←"
-	} else if (m.CanContinue) {
-		navigationText = "→"
-	}
-
-	navigation := navigationStyles.Render(navigationText)
 
 	if (m.IsFirstFetch) {
 		loadingContent := lipgloss.Place(
@@ -157,12 +130,19 @@ func (m Model) View() string {
 		)
 	}
 
+	if m.Help.ShowAll {
+		return lipgloss.JoinVertical(
+			lipgloss.Left,
+			titleAndNavigation,
+			content,
+			helpView,
+		)
+	}
+
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
 		titleAndNavigation,
 		content,
-		"\n",
-		navigation,
 		"\n",
 		helpView,
 	)
