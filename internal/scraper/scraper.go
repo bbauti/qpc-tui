@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gocolly/colly/v2"
+	md "github.com/JohannesKaufmann/html-to-markdown"
 )
 
 var (
@@ -111,6 +112,8 @@ func setupContentCollector(c *colly.Collector, articles *[]Article, mu *sync.Mut
 }
 
 func parseArticle(e *colly.HTMLElement) *Article {
+	converter := md.NewConverter("", true, nil)
+
 	info := e.ChildText(".noticia-detalle-info")
 	title := e.ChildText(".titulo2 ")
 	category := e.ChildText(".titulo")
@@ -129,7 +132,44 @@ func parseArticle(e *colly.HTMLElement) *Article {
 		return nil
 	}
 
-	body := strings.Join(e.ChildTexts("p"), "\n\n")
+	// the body is in a div with class "resumen", i want the entire html
+	articleBody, err := e.DOM.Find(".resumen").Html()
+	if err != nil {
+		log.Printf("Error getting article body: %v", err)
+		return nil
+	}
+
+	elementsToRemove := []string{
+		"#publi-entre-parrafos",
+		".share-block",
+		".owl-carousel",
+		"[href*='javascript:void(0)']",
+		".qpch2",
+	}
+
+	for _, element := range elementsToRemove {
+		articleBody, err = e.DOM.Find(element).Remove().End().Find(".resumen").Html()
+		if err != nil {
+			log.Printf("Error removing element %s: %v", element, err)
+			return nil
+		}
+	}
+
+	titleElement := e.DOM.Find(".titulo2")
+	titleElement.SetHtml("<h1>" + titleElement.Text() + "</h1>")
+	articleTitle, err := titleElement.Html()
+	if err != nil {
+		log.Printf("Error getting title: %v", err)
+		return nil
+	}
+	articleBody = articleTitle + articleBody
+
+	markdown, err := converter.ConvertString(articleBody)
+
+	if err != nil {
+		log.Printf("Error converting html to markdown: %v", err)
+		return nil
+	}
 
 	t, err := parseSpanishDate(info)
 	if err != nil {
@@ -142,7 +182,7 @@ func parseArticle(e *colly.HTMLElement) *Article {
 		Date:       t.Format("2006-01-02 15:04:05"),
 		Category:   category,
 		CategoryId: categoryId,
-		Body:       body,
+		Body:       markdown,
 		Link:       e.Request.URL.String(),
 	}
 }

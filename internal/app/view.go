@@ -6,6 +6,7 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/bubbles/list"
+	"github.com/charmbracelet/glamour"
 
 	"qpc-tui/internal/scraper"
 )
@@ -76,12 +77,14 @@ func (m Model) View() string {
 	} else if m.Quitting {
 			content = "Bye!"
 	} else if m.SelectedEntry != nil {
-			content = fmt.Sprintf("Title: %v\n", m.SelectedEntry.Title)
-			content += fmt.Sprintf("Date: %v\n", m.SelectedEntry.Date)
-			content += fmt.Sprintf("Category: %v\n", m.SelectedEntry.Category)
-			content += fmt.Sprintf("CategoryId: %v\n", m.SelectedEntry.CategoryId)
-			content += fmt.Sprintf("Body: %v\n", m.SelectedEntry.Body)
-			content += fmt.Sprintf("Link: %v\n", m.SelectedEntry.Link)
+			bodyRendered, err := glamour.Render(m.SelectedEntry.Body, "dark")
+			if err != nil {
+				content += fmt.Sprintf("Error rendering body: %v\n", err)
+			} else {
+				content += bodyRendered
+			}
+			// set an auto margin on top so the link is on the bottom
+			content += lipgloss.NewStyle().MarginTop(m.Height - 20).Align(lipgloss.Center).Foreground(lipgloss.Color("8")).Render(fmt.Sprintf(m.SelectedEntry.Link))
 	} else if m.Status > 0 && len(m.Entries) > 0 {
 			filteredEntries := filterEntriesByCategory(m.Entries, m.CurrentCategory)
 			m.List.SetItems(entriesToListItems(filteredEntries))

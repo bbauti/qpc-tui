@@ -107,13 +107,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.Width = msg.Width
 		m.Height = msg.Height
-		m.List.SetSize(msg.Width, msg.Height-6) // Adjust for header and help view
+		m.List.SetSize(msg.Width, msg.Height-6)
 		return m, m.List.NewStatusMessage(fmt.Sprintf("Window resized to %dx%d", msg.Width, msg.Height))
 
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, m.Keys.Left):
-			if !m.CanGoBack || m.Fetching {
+			if !m.CanGoBack || m.Fetching || m.SelectedEntry != nil {
 				return m, nil
 			}
 			m.Fetching = true
@@ -121,7 +121,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.LastKey = "←"
 			return m, m.FetchCmd
 		case key.Matches(msg, m.Keys.Right):
-			if !m.CanContinue || m.Fetching {
+			if !m.CanContinue || m.Fetching || m.SelectedEntry != nil {
 				return m, nil
 			}
 			m.Fetching = true
@@ -143,6 +143,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.CurrentCategory = (m.CurrentCategory + 1) % 4
 			return m, nil
 		case key.Matches(msg, m.Keys.Enter):
+			if m.SelectedEntry != nil {
+				return m, nil
+			}
 			// find the entry in the entries that has the same title(title) and date(description) as the selected item
 			selectedItem := m.List.SelectedItem().(item)
 			for _, entry := range m.Entries {

@@ -89,5 +89,5 @@ func InitialModel(s ssh.Session) (tea.Model, []tea.ProgramOption) {
 		InputStyle:  renderer.NewStyle().Foreground(lipgloss.Color("#FF75B7")),
 		List:        l,
 	}
-	return m, []tea.ProgramOption{tea.WithAltScreen()}
+	return m, []tea.ProgramOption{tea.WithAltScreen(), tea.WithMouseCellMotion()}
 }
