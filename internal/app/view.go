@@ -67,6 +67,8 @@ func (m Model) View() string {
 			Align(lipgloss.Center).
 			Render(titleAndNavigation)
 
+	titleAndNavigationHeight := len(strings.Split(titleAndNavigation, "\n"))
+
 	var content string
 	if m.Fetching {
 			content = m.Spinner.View() + " Obteniendo entradas..."
@@ -74,14 +76,18 @@ func (m Model) View() string {
 			content = "Bye!"
 	} else if m.SelectedEntry != nil {
 		wrappedBody := wordwrap.String(m.SelectedEntry.Body, m.Width-8)
+		r, _ := glamour.NewTermRenderer(
+			glamour.WithAutoStyle(),
+			glamour.WithWordWrap(m.Width-8),
+		)
 
-    bodyRendered, err := glamour.Render(wrappedBody, "dark")
+		bodyRendered, err := r.Render(wrappedBody)
     if err != nil {
         content += fmt.Sprintf("Error rendering body: %v\n", err)
     } else {
         content += bodyRendered
     }
-    content += m.renderer.NewStyle().Width(m.Width-4).MarginTop(m.Height-8).Align(lipgloss.Center).Foreground(lipgloss.Color("8")).Render(fmt.Sprintf(m.SelectedEntry.Link))
+    content += m.renderer.NewStyle().Width(m.Width-4).MarginTop(m.Height-3-titleAndNavigationHeight).Align(lipgloss.Center).Foreground(lipgloss.Color("8")).Render(fmt.Sprintf(m.SelectedEntry.Link))
 	} else if m.Status > 0 && len(m.Entries) > 0 {
 			filteredEntries := filterEntriesByCategory(m.Entries, m.CurrentCategory)
 			m.List.SetItems(entriesToListItems(filteredEntries))
@@ -92,7 +98,7 @@ func (m Model) View() string {
 
 	helpView := m.renderer.NewStyle().MarginLeft(1).Render(m.Help.View(m.Keys))
 
-	contentHeight := m.Height-8
+	contentHeight := m.Height-3-titleAndNavigationHeight
 	if m.Help.ShowAll {
 		contentHeight += 1
 	}
