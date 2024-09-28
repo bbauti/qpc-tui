@@ -99,7 +99,7 @@ func (m Model) View() string {
 		contentHeight -= strings.Count(helpView, "\n") + 1
 	}
 	if (m.SelectedEntry != nil) {
-		contentHeight += strings.Count(content, "\n") + 2
+		contentHeight += 3
 	}
 
 	// Ensure the content doesn't exceed the available height
