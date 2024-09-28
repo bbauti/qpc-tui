@@ -26,21 +26,21 @@ func (m Model) View() string {
 	var tabItems []string
 	for i, item := range navigationMenuItems {
 			if m.SelectedEntry != nil {
-					tabItems = append(tabItems, lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render(item))
+					tabItems = append(tabItems, m.renderer.NewStyle().Foreground(lipgloss.Color("8")).Render(item))
 			} else if i == m.CurrentCategory {
-					tabItems = append(tabItems, lipgloss.NewStyle().Background(lipgloss.Color("205")).Foreground(lipgloss.Color("0")).Render(item))
+					tabItems = append(tabItems, m.renderer.NewStyle().Background(lipgloss.Color("205")).Foreground(lipgloss.Color("0")).Render(item))
 			} else {
-					tabItems = append(tabItems, lipgloss.NewStyle().Render(item))
+					tabItems = append(tabItems, m.renderer.NewStyle().Render(item))
 			}
 	}
 
-	title := lipgloss.NewStyle().
+	title := m.renderer.NewStyle().
 			Width(35).
 			Foreground(lipgloss.Color("8")).
 			Render(fmt.Sprintf("Chacabuco en Red TUI - Page %d", m.CurrentPage))
 
 	// Create a style for each tab item with vertical borders
-	tabStyle := lipgloss.NewStyle().
+	tabStyle := m.renderer.NewStyle().
 			Border(lipgloss.NormalBorder(), false, false, false, true).
 			BorderForeground(lipgloss.Color("8")).
 			PaddingLeft(1).
@@ -63,7 +63,7 @@ func (m Model) View() string {
 	)
 
 	// Add a border around the entire titleAndNavigation
-	titleAndNavigation = lipgloss.NewStyle().
+	titleAndNavigation = m.renderer.NewStyle().
 			Border(lipgloss.NormalBorder()).
 			BorderForeground(lipgloss.Color("8")).
 			Margin(1, 2).
@@ -94,7 +94,7 @@ func (m Model) View() string {
 	}
 
 	// add left margin to the help view
-	helpView := lipgloss.NewStyle().MarginLeft(1).Render(m.Help.View(m.Keys))
+	helpView := m.renderer.NewStyle().MarginLeft(1).Render(m.Help.View(m.Keys))
 
 	// Calculate available height for content
 	contentHeight := m.Height - 11 // Subtract space for header, help, and margins
@@ -116,7 +116,7 @@ func (m Model) View() string {
 		content += "\n"
 	}
 
-	navigationStyles := lipgloss.NewStyle().
+	navigationStyles := m.renderer.NewStyle().
 		MarginLeft(2)
 
 
