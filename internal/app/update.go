@@ -10,6 +10,7 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/bubbles/list"
+	"github.com/charmbracelet/glamour"
 
 	"qpc-tui/internal/scraper"
 )
@@ -115,16 +116,23 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(cmd, m.Spinner.Tick)
 
 	case tea.WindowSizeMsg:
-    m.Width = msg.Width
-    m.Height = msg.Height
-    m.List.SetSize(msg.Width, msg.Height-8)
+		m.Width = msg.Width
+		m.Height = msg.Height
+		m.List.SetSize(msg.Width, msg.Height-8)
+		m.Viewport.Width = msg.Width
+		m.Viewport.Height = msg.Height - 8
 
-    cmd = m.List.NewStatusMessage(fmt.Sprintf("Window resized to %dx%d", msg.Width, msg.Height))
+		cmd = m.List.NewStatusMessage(fmt.Sprintf("Window resized to %dx%d", msg.Width, msg.Height))
 
-    return m, cmd
+		return m, cmd
 
 	case tea.KeyMsg:
+
 		switch {
+		case key.Matches(msg, m.Keys.Up.Binding) && m.Keys.Up.Enabled:
+			m.Viewport.LineUp(1)
+		case key.Matches(msg, m.Keys.Down.Binding) && m.Keys.Down.Enabled:
+			m.Viewport.LineDown(1)
 		case key.Matches(msg, m.Keys.Left.Binding) && m.Keys.Left.Enabled:
 			if m.Fetching {
 				return m, nil
@@ -152,11 +160,27 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			for _, entry := range m.Entries {
 				if entry.Title == selectedItem.Title() && entry.Date == selectedItem.Description() {
 					m.SelectedEntry = &entry
-					m.Keys.Quit.SetHelp("q", "volver atrás")
+					m.Keys.Quit.SetHelp("q", "volver atrás ")
+					m.Keys.Up.SetHelp("↑", "subir ")
+					m.Keys.Down.SetHelp("↓", "bajar ")
 					m.Keys.Enter.Enabled = false
 					m.Keys.Tab.Enabled = false
 					m.Keys.Left.Enabled = false
 					m.Keys.Right.Enabled = false
+
+					r, _ := glamour.NewTermRenderer(
+						glamour.WithAutoStyle(),
+						glamour.WithWordWrap(m.Width-8),
+					)
+
+					bodyRendered, err := r.Render(m.SelectedEntry.Body)
+					if err != nil {
+						m.Err = err
+						return m, tea.Quit
+					}
+
+					m.Viewport.SetContent(bodyRendered)
+					m.Viewport.GotoTop()
 					break
 				}
 			}
@@ -165,6 +189,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.SelectedEntry != nil {
 				m.SelectedEntry = nil
 				m.Keys.Quit.SetHelp("q", "salir")
+				m.Keys.Up.SetHelp("↑", "articulo anterior ")
+				m.Keys.Down.SetHelp("↓", "siguiente articulo ")
 				m.Keys.Enter.Enabled = true
 				m.Keys.Tab.Enabled = true
 				m.Keys.Left.Enabled = true

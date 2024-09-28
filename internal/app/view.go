@@ -6,8 +6,6 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/bubbles/list"
-	"github.com/charmbracelet/glamour"
-	"github.com/muesli/reflow/wordwrap"
 
 	"qpc-tui/internal/scraper"
 )
@@ -71,29 +69,17 @@ func (m Model) View() string {
 
 	var content string
 	if m.Fetching {
-			content = m.Spinner.View() + " Obteniendo entradas..."
+		content = m.Spinner.View() + " Obteniendo entradas..."
 	} else if m.Quitting {
-			content = "Bye!"
+		content = "Bye!"
 	} else if m.SelectedEntry != nil {
-		wrappedBody := wordwrap.String(m.SelectedEntry.Body, m.Width-8)
-		r, _ := glamour.NewTermRenderer(
-			glamour.WithAutoStyle(),
-			glamour.WithWordWrap(m.Width-8),
-		)
-
-		bodyRendered, err := r.Render(wrappedBody)
-    if err != nil {
-        content += fmt.Sprintf("Error rendering body: %v\n", err)
-    } else {
-        content += bodyRendered
-    }
-    content += m.renderer.NewStyle().Width(m.Width-4).MarginTop(m.Height-3-titleAndNavigationHeight).Align(lipgloss.Center).Foreground(lipgloss.Color("8")).Render(fmt.Sprintf(m.SelectedEntry.Link))
+		content = m.Viewport.View()
 	} else if m.Status > 0 && len(m.Entries) > 0 {
-			filteredEntries := filterEntriesByCategory(m.Entries, m.CurrentCategory)
-			m.List.SetItems(entriesToListItems(filteredEntries))
-			content = m.List.View()
+		filteredEntries := filterEntriesByCategory(m.Entries, m.CurrentCategory)
+		m.List.SetItems(entriesToListItems(filteredEntries))
+		content = m.List.View()
 	} else {
-			content = m.Spinner.View() + " Obteniendo entradas..."
+		content = m.Spinner.View() + " Obteniendo entradas..."
 	}
 
 	helpView := m.renderer.NewStyle().MarginLeft(1).Render(m.Help.View(m.Keys))

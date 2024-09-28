@@ -8,6 +8,7 @@ import (
 	"github.com/charmbracelet/ssh"
 	"github.com/charmbracelet/wish/bubbletea"
 	"github.com/charmbracelet/bubbles/list"
+	"github.com/charmbracelet/bubbles/viewport"
 
 	"qpc-tui/internal/scraper"
 	"qpc-tui/internal/ui"
@@ -42,6 +43,7 @@ type Model struct {
 	FetchCmd     tea.Cmd
 	Spinner      spinner.Model
 	List         list.Model
+	Viewport     viewport.Model
 
 	renderer *lipgloss.Renderer
 }
@@ -90,6 +92,8 @@ func InitialModel(s ssh.Session) (tea.Model, []tea.ProgramOption) {
 		Help:        help.New(),
 		InputStyle:  renderer.NewStyle().Foreground(lipgloss.Color("#FF75B7")),
 		List:        l,
+
+		Viewport: viewport.New(width, height-8), // Initialize viewport
 
 		renderer: renderer,
 	}

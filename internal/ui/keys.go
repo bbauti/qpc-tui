@@ -5,6 +5,7 @@ import "github.com/charmbracelet/bubbles/key"
 type KeyBinding struct {
 	key.Binding
 	Enabled bool
+
 }
 
 type KeyMap struct {
