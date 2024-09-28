@@ -143,7 +143,7 @@ var Keys = KeyMap{
 	Quit: KeyBinding{
 		Binding: key.NewBinding(
 			key.WithKeys("q", "esc", "ctrl+c"),
-			key.WithHelp("q", "salir / volver atrás"),
+			key.WithHelp("q", "salir"),
 		),
 		Enabled: true,
 	},

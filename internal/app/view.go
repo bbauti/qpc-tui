@@ -120,16 +120,6 @@ func (m Model) View() string {
 		)
 	}
 
-	if m.SelectedEntry != nil {
-		return lipgloss.JoinVertical(
-			lipgloss.Left,
-			titleAndNavigation,
-			content,
-			"\n",
-			helpView,
-		)
-	}
-
 	if m.Help.ShowAll {
 		return lipgloss.JoinVertical(
 			lipgloss.Left,

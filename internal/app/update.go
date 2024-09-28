@@ -152,6 +152,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			for _, entry := range m.Entries {
 				if entry.Title == selectedItem.Title() && entry.Date == selectedItem.Description() {
 					m.SelectedEntry = &entry
+					m.Keys.Quit.SetHelp("q", "volver atrás")
 					m.Keys.Enter.Enabled = false
 					m.Keys.Tab.Enabled = false
 					m.Keys.Left.Enabled = false
@@ -163,6 +164,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, m.Keys.Quit.Binding) && m.Keys.Quit.Enabled:
 			if m.SelectedEntry != nil {
 				m.SelectedEntry = nil
+				m.Keys.Quit.SetHelp("q", "salir")
 				m.Keys.Enter.Enabled = true
 				m.Keys.Tab.Enabled = true
 				m.Keys.Left.Enabled = true
