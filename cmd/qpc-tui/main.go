@@ -33,7 +33,7 @@ func main() {
 		wish.WithMiddleware(
 			bubbletea.Middleware(func(s ssh.Session) (tea.Model, []tea.ProgramOption) {
 				m, opts := app.InitialModel(s)
-				return m, append(opts)
+				return m, opts
 		}),
 			activeterm.Middleware(),
 			logging.Middleware(),

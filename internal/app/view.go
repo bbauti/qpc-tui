@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/glamour"
+	"github.com/muesli/reflow/wordwrap"
 
 	"qpc-tui/internal/scraper"
 )
@@ -77,13 +78,14 @@ func (m Model) View() string {
 	} else if m.Quitting {
 			content = "Bye!"
 	} else if m.SelectedEntry != nil {
-			bodyRendered, err := glamour.Render(m.SelectedEntry.Body, "dark")
+			wrappedBody := wordwrap.String(m.SelectedEntry.Body, m.Width-8)
+
+			bodyRendered, err := glamour.Render(wrappedBody, "dark")
 			if err != nil {
 				content += fmt.Sprintf("Error rendering body: %v\n", err)
 			} else {
 				content += bodyRendered
 			}
-			// set an auto margin on top so the link is on the bottom
 			content += m.renderer.NewStyle().Width(m.Width-4).MarginTop(m.Height - 20).Align(lipgloss.Center).Foreground(lipgloss.Color("8")).Render(fmt.Sprintf(m.SelectedEntry.Link))
 	} else if m.Status > 0 && len(m.Entries) > 0 {
 			filteredEntries := filterEntriesByCategory(m.Entries, m.CurrentCategory)
