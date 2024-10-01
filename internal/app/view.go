@@ -27,7 +27,15 @@ func (m Model) View() string {
 			if m.SelectedEntry != nil {
 					tabItems = append(tabItems, m.renderer.NewStyle().Foreground(lipgloss.Color("8")).Render(item))
 			} else if i == m.CurrentCategory {
-					tabItems = append(tabItems, m.renderer.NewStyle().Background(lipgloss.Color("205")).Foreground(lipgloss.Color("0")).Render(item))
+					if (m.CurrentCategory == 2) {
+						tabItems = append(tabItems, m.renderer.NewStyle().Foreground(lipgloss.Color("#066ee8")).Render(item))
+					} else if (m.CurrentCategory == 1) {
+						tabItems = append(tabItems, m.renderer.NewStyle().Foreground(lipgloss.Color("#e61e1e")).Render(item))
+					} else if (m.CurrentCategory == 3) {
+						tabItems = append(tabItems, m.renderer.NewStyle().Foreground(lipgloss.Color("#ff8800")).Render(item))
+					} else {
+						tabItems = append(tabItems, m.renderer.NewStyle().Foreground(lipgloss.Color("8")).Render(item))
+					}
 			} else {
 					tabItems = append(tabItems, m.renderer.NewStyle().Render(item))
 			}

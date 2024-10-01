@@ -168,6 +168,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.Keys.Tab.Enabled = false
 					m.Keys.Left.Enabled = false
 					m.Keys.Right.Enabled = false
+					m.List.KeyMap.NextPage.SetEnabled(false)
+					m.List.KeyMap.PrevPage.SetEnabled(false)
+					m.List.KeyMap.CursorUp.SetEnabled(false)
+					m.List.KeyMap.CursorDown.SetEnabled(false)
 
 					r, _ := glamour.NewTermRenderer(
 						glamour.WithAutoStyle(),
@@ -196,6 +200,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.Keys.Tab.Enabled = true
 				m.Keys.Left.Enabled = true
 				m.Keys.Right.Enabled = true
+				m.List.KeyMap.NextPage.SetEnabled(true)
+				m.List.KeyMap.PrevPage.SetEnabled(true)
+				m.List.KeyMap.CursorUp.SetEnabled(true)
+				m.List.KeyMap.CursorDown.SetEnabled(true)
 				return m, nil
 			}
 			m.Quitting = true
