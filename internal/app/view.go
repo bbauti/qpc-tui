@@ -69,17 +69,17 @@ func (m Model) View() string {
 
 	var content string
 	if m.Fetching {
-			content = lipgloss.JoinHorizontal(lipgloss.Center, m.Spinner.View(), "  Obteniendo entradas...")
+		content = lipgloss.JoinHorizontal(lipgloss.Center, m.Spinner.View(), "  Obteniendo entradas...")
 	} else if m.Quitting {
-			content = "Bye!"
+		content = "Bye!"
 	} else if m.SelectedEntry != nil {
-			content = m.Viewport.View()
+		content = m.Viewport.View()
 	} else if m.Status > 0 && len(m.Entries) > 0 {
-			filteredEntries := filterEntriesByCategory(m.Entries, m.CurrentCategory)
-			m.List.SetItems(entriesToListItems(filteredEntries))
-			content = m.List.View()
+		filteredEntries := filterEntriesByCategory(m.Entries, m.CurrentCategory)
+		m.List.SetItems(entriesToListItems(filteredEntries))
+		content = m.List.View()
 	} else {
-			content = lipgloss.JoinHorizontal(lipgloss.Center, m.Spinner.View(), "  Obteniendo entradas...")
+		content = lipgloss.JoinHorizontal(lipgloss.Center, m.Spinner.View(), "  Obteniendo entradas...")
 	}
 
 	helpView := m.renderer.NewStyle().MarginLeft(1).Render(m.Help.View(m.Keys))

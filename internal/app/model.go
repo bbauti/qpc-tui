@@ -66,7 +66,7 @@ func InitialModel(s ssh.Session) (tea.Model, []tea.ProgramOption) {
 	sp.Style = renderer.NewStyle().Foreground(lipgloss.Color("205"))
 
 	listItems := []list.Item{}
-	l := list.New(listItems, list.NewDefaultDelegate(), width, height-6)
+	l := list.New(listItems, NewCustomDelegate(renderer), width, height-6)
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(false)
 	l.SetShowHelp(false)

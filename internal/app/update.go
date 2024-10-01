@@ -118,7 +118,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.Width = msg.Width
 		m.Height = msg.Height
-		m.List.SetSize(msg.Width, msg.Height-8)
+		m.List.SetWidth(msg.Width)
+		m.List.SetHeight(msg.Height - 8)
 		m.Viewport.Width = msg.Width
 		m.Viewport.Height = msg.Height - 8
 
