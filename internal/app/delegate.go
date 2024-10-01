@@ -11,13 +11,13 @@ import (
 
 type customDelegate struct {
 	renderer *lipgloss.Renderer
+	model Model
+}
+func NewCustomDelegate(renderer *lipgloss.Renderer, model Model) list.ItemDelegate {
+	return &customDelegate{renderer: renderer, model: model}
 }
 
-func NewCustomDelegate(renderer *lipgloss.Renderer) list.ItemDelegate {
-	return &customDelegate{renderer: renderer}
-}
-
-func (d customDelegate) Height() int                               { return 1 }
+func (d customDelegate) Height() int                               { return 2 }
 func (d customDelegate) Spacing() int                              { return 1 }
 func (d customDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd { return nil }
 
@@ -35,25 +35,42 @@ func (d customDelegate) Render(w io.Writer, m list.Model, index int, listItem li
 	if !ok {
 		return
 	}
-	str := fmt.Sprintf("%d. %s", index+1, i.title)
+
+	indexStr := fmt.Sprintf("%d. ", index+1)
+	titleStr := i.title
+	var subtitle string
+	if d.model.Entries != nil {
+		for _, entry := range d.model.Entries {
+			if entry.Title == i.title && entry.Date == i.desc {
+				subtitle = fmt.Sprintf("%s | %s", entry.Category, entry.Date)
+				break
+			}
+		}
+	}
 	if index < 9 {
-		str = fmt.Sprintf(" %s", str)
+		indexStr = " " + indexStr
 	}
 
-	fn := d.renderer.NewStyle().
+	indexStyle := d.renderer.NewStyle().
 		Foreground(lipgloss.Color("#888888")).
-		MarginLeft(4).
-		Render
+		MarginLeft(4)
+
+	titleStyle := d.renderer.NewStyle().
+		Foreground(lipgloss.Color("#888888"))
 
 	if index == m.Index() {
-		fn = d.renderer.NewStyle().
+		titleStyle = titleStyle.
 			Foreground(lipgloss.Color("#1A1A1A")).
-			MarginLeft(4).
-			Background(lipgloss.Color("#888888")).
-			Render
+			Background(lipgloss.Color("#888888"))
 	}
 
-	// You can use categoryId here if needed
+	subtitleStyle := d.renderer.NewStyle().
+		Foreground(lipgloss.Color("#444444")).
+		MarginLeft(8)
 
-	fmt.Fprint(w, fn(str))
+	fmt.Fprint(w, indexStyle.Render(indexStr))
+	fmt.Fprint(w, titleStyle.Render(titleStr))
+	if subtitle != "" {
+		fmt.Fprint(w, "\n"+subtitleStyle.Render(subtitle))
+	}
 }

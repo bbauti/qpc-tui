@@ -65,13 +65,6 @@ func InitialModel(s ssh.Session) (tea.Model, []tea.ProgramOption) {
 	sp.Spinner = spinner.Dot
 	sp.Style = renderer.NewStyle().Foreground(lipgloss.Color("205"))
 
-	listItems := []list.Item{}
-	l := list.New(listItems, NewCustomDelegate(renderer), width, height-6)
-	l.SetShowStatusBar(false)
-	l.SetFilteringEnabled(false)
-	l.SetShowHelp(false)
-	l.SetShowTitle(false)
-
 	m := Model{
 		Term:      pty.Term,
 		Profile:   renderer.ColorProfile().Name(),
@@ -91,11 +84,20 @@ func InitialModel(s ssh.Session) (tea.Model, []tea.ProgramOption) {
 		Keys:        ui.Keys,
 		Help:        help.New(),
 		InputStyle:  renderer.NewStyle().Foreground(lipgloss.Color("#FF75B7")),
-		List:        l,
 
-		Viewport: viewport.New(width, height-8), // Initialize viewport
+		Viewport: viewport.New(width, height-8),
 
 		renderer: renderer,
 	}
+
+	listItems := []list.Item{}
+	l := list.New(listItems, NewCustomDelegate(renderer, m), width, height-6)
+	l.SetShowStatusBar(false)
+	l.SetFilteringEnabled(false)
+	l.SetShowHelp(false)
+	l.SetShowTitle(false)
+
+	m.List = l
+
 	return m, []tea.ProgramOption{tea.WithAltScreen()}
 }

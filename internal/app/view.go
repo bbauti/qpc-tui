@@ -85,6 +85,7 @@ func (m Model) View() string {
 	} else if m.Status > 0 && len(m.Entries) > 0 {
 		filteredEntries := filterEntriesByCategory(m.Entries, m.CurrentCategory)
 		m.List.SetItems(entriesToListItems(filteredEntries))
+		m.List.SetDelegate(NewCustomDelegate(m.renderer, m))
 		content = m.List.View()
 	} else {
 		content = lipgloss.JoinHorizontal(lipgloss.Center, m.Spinner.View(), "  Obteniendo entradas...")
