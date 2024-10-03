@@ -96,6 +96,13 @@ func InitialModel(s ssh.Session) (tea.Model, []tea.ProgramOption) {
 	l.SetFilteringEnabled(false)
 	l.SetShowHelp(false)
 	l.SetShowTitle(false)
+	l.Styles.PaginationStyle = renderer.NewStyle().PaddingLeft(2)
+	l.Styles.ActivePaginationDot = renderer.NewStyle().
+		Foreground(lipgloss.AdaptiveColor{Light: "#847A85", Dark: "#979797"}).
+		SetString("•")
+	l.Styles.InactivePaginationDot = renderer.NewStyle().
+		Foreground(lipgloss.AdaptiveColor{Light: "#DDDADA", Dark: "#3C3C3C"}).
+		SetString("•")
 
 	m.List = l
 
