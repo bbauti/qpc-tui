@@ -1,3 +1,10 @@
+/*
+	Custom delegate for the List bubble
+	We need a custom delegate to render the list with the model renderer, since the
+	list bubble uses lipgloss to render the list the styles weren't applied correctly
+	in the ssh server.
+*/
+
 package app
 
 import (
@@ -13,6 +20,7 @@ type customDelegate struct {
 	renderer *lipgloss.Renderer
 	model Model
 }
+
 func NewCustomDelegate(renderer *lipgloss.Renderer, model Model) list.ItemDelegate {
 	return &customDelegate{renderer: renderer, model: model}
 }
@@ -52,20 +60,18 @@ func (d customDelegate) Render(w io.Writer, m list.Model, index int, listItem li
 	}
 
 	indexStyle := d.renderer.NewStyle().
-		Foreground(lipgloss.Color("#888888")).
 		MarginLeft(4)
 
-	titleStyle := d.renderer.NewStyle().
-		Foreground(lipgloss.Color("#888888"))
+	titleStyle := d.renderer.NewStyle()
 
 	if index == m.Index() {
 		titleStyle = titleStyle.
-			Foreground(lipgloss.Color("#1A1A1A")).
-			Background(lipgloss.Color("#888888"))
+			Foreground(lipgloss.Color("0")).
+			Background(lipgloss.Color("102"))
 	}
 
 	subtitleStyle := d.renderer.NewStyle().
-		Foreground(lipgloss.Color("#444444")).
+		Foreground(lipgloss.Color("8")).
 		MarginLeft(8)
 
 	fmt.Fprint(w, indexStyle.Render(indexStr))

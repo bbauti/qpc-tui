@@ -11,6 +11,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/glamour"
+	"github.com/charmbracelet/log"
 
 	"qpc-tui/internal/scraper"
 )
@@ -49,9 +50,14 @@ func fetchEntries(page int) tea.Cmd {
 }
 
 func (m Model) Init() tea.Cmd {
+	// We use Batch to run multiple commands concurrently
 	return tea.Batch(m.Spinner.Tick, checkServer, fetchEntries(m.CurrentPage))
 }
 
+/*
+	Each time bubbletea receives a message it calls the update function with the message,
+	we need to handle the message and return the next message and the command to be executed.
+*/
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
@@ -135,20 +141,22 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, m.Keys.Down.Binding) && m.Keys.Down.Enabled:
 			m.Viewport.LineDown(1)
 		case key.Matches(msg, m.Keys.Left.Binding) && m.Keys.Left.Enabled:
-			if m.Fetching {
+			if m.Fetching || !m.CanGoBack {
 				return m, nil
 			}
 			m.Fetching = true
 			m.FetchCmd = fetchEntries(m.CurrentPage - 1)
 			m.LastKey = "←"
+			log.Infof("User navigated to the previous page: %d", m.CurrentPage - 1)
 			return m, m.FetchCmd
 		case key.Matches(msg, m.Keys.Right.Binding) && m.Keys.Right.Enabled:
-			if m.Fetching {
+			if m.Fetching || !m.CanContinue {
 				return m, nil
 			}
 			m.Fetching = true
 			m.FetchCmd = fetchEntries(m.CurrentPage + 1)
 			m.LastKey = "→"
+			log.Infof("User navigated to the next page: %d", m.CurrentPage + 1)
 			return m, tea.Batch(m.Spinner.Tick, m.FetchCmd)
 		case key.Matches(msg, m.Keys.Help.Binding) && m.Keys.Help.Enabled:
 			m.Help.ShowAll = !m.Help.ShowAll
@@ -174,7 +182,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.List.KeyMap.CursorDown.SetEnabled(false)
 
 					r, _ := glamour.NewTermRenderer(
-						glamour.WithAutoStyle(),
+						glamour.WithStylePath("notty"),
 						glamour.WithWordWrap(m.Width-8),
 					)
 
@@ -186,6 +194,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 					m.Viewport.SetContent(bodyRendered)
 					m.Viewport.GotoTop()
+
+					log.Infof("User selected the article: %s", m.SelectedEntry.Title)
 					break
 				}
 			}
@@ -211,6 +221,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
+	// Update the list bubble
 	var listCmd tea.Cmd
 	m.List, listCmd = m.List.Update(msg)
 	return m, tea.Batch(cmd, listCmd)

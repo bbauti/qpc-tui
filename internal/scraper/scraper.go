@@ -2,7 +2,6 @@ package scraper
 
 import (
 	"fmt"
-	"log"
 	"regexp"
 	"strconv"
 	"strings"
@@ -10,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gocolly/colly/v2"
+	"github.com/charmbracelet/log"
 	md "github.com/JohannesKaufmann/html-to-markdown"
 )
 
@@ -82,7 +82,7 @@ func setupMainCollector(c *colly.Collector, links *[]string, additionalClass str
 
 	c.OnScraped(func(r *colly.Response) {
 		if len(*links) == 0 {
-			log.Println("Error: No elements found with the specified selector.")
+			log.Error("Error: No elements found with the specified selector.")
 		}
 	})
 
@@ -122,19 +122,19 @@ func parseArticle(e *colly.HTMLElement) *Article {
 	re := regexp.MustCompile(`categoria_(\d+)`)
 	matches := re.FindStringSubmatch(classes)
 	if len(matches) < 2 {
-		log.Printf("Error: the categoryId was not found for the article: %s", title)
+		log.Error("Error: the categoryId was not found for the article: %s", title)
 		return nil
 	}
 
 	categoryId, err := strconv.Atoi(matches[1])
 	if err != nil {
-		log.Printf("Error parsing categoryId: %v", err)
+		log.Error("Error parsing categoryId: %v", err)
 		return nil
 	}
 
 	articleBody, err := e.DOM.Find(".resumen").Html()
 	if err != nil {
-		log.Printf("Error getting article body: %v", err)
+		log.Error("Error getting article body: %v", err)
 		return nil
 	}
 
@@ -149,7 +149,7 @@ func parseArticle(e *colly.HTMLElement) *Article {
 	for _, element := range elementsToRemove {
 		articleBody, err = e.DOM.Find(element).Remove().End().Find(".resumen").Html()
 		if err != nil {
-			log.Printf("Error removing element %s: %v", element, err)
+			log.Error("Error removing element %s: %v", element, err)
 			return nil
 		}
 	}
@@ -158,7 +158,7 @@ func parseArticle(e *colly.HTMLElement) *Article {
 	titleElement.SetHtml("<h1>" + titleElement.Text() + "</h1>")
 	articleTitle, err := titleElement.Html()
 	if err != nil {
-		log.Printf("Error getting title: %v", err)
+		log.Error("Error getting title: %v", err)
 		return nil
 	}
 	articleBody = articleTitle + articleBody
@@ -166,13 +166,13 @@ func parseArticle(e *colly.HTMLElement) *Article {
 	markdown, err := converter.ConvertString(articleBody)
 
 	if err != nil {
-		log.Printf("Error converting html to markdown: %v", err)
+		log.Error("Error converting html to markdown: %v", err)
 		return nil
 	}
 
 	t, err := parseSpanishDate(info)
 	if err != nil {
-		log.Printf("Error parsing date: %v", err)
+		log.Error("Error parsing date: %v", err)
 		return nil
 	}
 
@@ -197,7 +197,7 @@ func setupOnScrapedCallback(c *colly.Collector, contentCollector *colly.Collecto
 
 				defer wg.Done()
 				if err := contentCollector.Visit(url); err != nil {
-					log.Printf("Error visiting %s: %v", url, err)
+					log.Error("Error visiting %s: %v", url, err)
 				}
 			}(link)
 		}

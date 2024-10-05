@@ -49,9 +49,13 @@ type Model struct {
 }
 
 func InitialModel(s ssh.Session) (tea.Model, []tea.ProgramOption) {
+	// The pty is the pseudo terminal that is created when the program starts,
+	// it is used to get the size of the terminal.
 	pty, _, _ := s.Pty()
 	width, height := pty.Window.Width, pty.Window.Height
 
+	// Since we use Wish, we need to use the MakeRenderer function to create the renderer,
+	// since the one that lipgloss provides is not compatible with Wish.
 	renderer := bubbletea.MakeRenderer(s)
 	txtStyle := renderer.NewStyle().Foreground(lipgloss.Color("10"))
 	quitStyle := renderer.NewStyle().Foreground(lipgloss.Color("8"))
@@ -90,6 +94,8 @@ func InitialModel(s ssh.Session) (tea.Model, []tea.ProgramOption) {
 		renderer: renderer,
 	}
 
+	// To make the list work correctly with our custom renderer we need to use a custom
+	// delegate and modify some styles.
 	listItems := []list.Item{}
 	l := list.New(listItems, NewCustomDelegate(renderer, m), width, height-6)
 	l.SetShowStatusBar(false)

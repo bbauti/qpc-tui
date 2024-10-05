@@ -22,17 +22,18 @@ func (m Model) View() string {
 			"Automotores",
 	}
 
+	// Render the navigation menu, it shows the current category and the selected entry
 	var tabItems []string
 	for i, item := range navigationMenuItems {
 			if m.SelectedEntry != nil {
 					tabItems = append(tabItems, m.renderer.NewStyle().Foreground(lipgloss.Color("8")).Render(item))
 			} else if i == m.CurrentCategory {
 					if (m.CurrentCategory == 2) {
-						tabItems = append(tabItems, m.renderer.NewStyle().Foreground(lipgloss.Color("#066ee8")).Render(item))
+						tabItems = append(tabItems, m.renderer.NewStyle().Foreground(lipgloss.Color("4")).Render(item))
 					} else if (m.CurrentCategory == 1) {
-						tabItems = append(tabItems, m.renderer.NewStyle().Foreground(lipgloss.Color("#e61e1e")).Render(item))
+						tabItems = append(tabItems, m.renderer.NewStyle().Foreground(lipgloss.Color("1")).Render(item))
 					} else if (m.CurrentCategory == 3) {
-						tabItems = append(tabItems, m.renderer.NewStyle().Foreground(lipgloss.Color("#ff8800")).Render(item))
+						tabItems = append(tabItems, m.renderer.NewStyle().Foreground(lipgloss.Color("3")).Render(item))
 					} else {
 						tabItems = append(tabItems, m.renderer.NewStyle().Foreground(lipgloss.Color("8")).Render(item))
 					}
