@@ -16,7 +16,7 @@ import (
 	"qpc-tui/internal/scraper"
 )
 
-const url = "https://quepensaschacabuco.com/"
+const url = "https://chacabucoenred.com/"
 
 type statusMsg int
 
@@ -162,7 +162,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.Help.ShowAll = !m.Help.ShowAll
 			return m, nil
 		case key.Matches(msg, m.Keys.Tab.Binding) && m.Keys.Tab.Enabled:
-			m.CurrentCategory = (m.CurrentCategory + 1) % 4
+			// TODO: switch categories
+			m.CurrentCategory = ""
 			return m, nil
 		case key.Matches(msg, m.Keys.Enter.Binding) && m.Keys.Enter.Enabled:
 			selectedItem := m.List.SelectedItem().(item)

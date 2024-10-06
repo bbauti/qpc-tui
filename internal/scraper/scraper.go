@@ -2,8 +2,6 @@ package scraper
 
 import (
 	"fmt"
-	"regexp"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -44,7 +42,7 @@ type Article struct {
 	Title      string `json:"title"`
 	Date       string `json:"date"`
 	Category   string `json:"category"`
-	CategoryId int    `json:"category_id"`
+	CategoryId string `json:"category_id"`
 	Body       string `json:"body"`
 	Link       string `json:"link"`
 }
@@ -70,12 +68,9 @@ func setupCollectors(c *colly.Collector, links *[]string, articles *[]Article, m
 }
 
 func setupMainCollector(c *colly.Collector, links *[]string, additionalClass string, canContinue *bool, canGoBack *bool) {
-	class := " .noticia1" + additionalClass
-
-	c.OnHTML("[data-link]"+class, func(e *colly.HTMLElement) {
-		parent := e.DOM.Parent()
-
-		if link := parent.AttrOr("data-link", ""); link != "" {
+	c.OnHTML(" .post-block__link" + additionalClass, func(e *colly.HTMLElement) {
+		link := e.Attr("href")
+		if link != "" {
 			*links = append(*links, link)
 		}
 	})
@@ -86,20 +81,20 @@ func setupMainCollector(c *colly.Collector, links *[]string, additionalClass str
 		}
 	})
 
-	c.OnHTML(".pagination a", func(e *colly.HTMLElement) {
-		if e.Text == "Siguiente" {
-			*canContinue = true
-		}
-		if e.Text == "Anterior" {
-			*canGoBack = true
-		}
+
+	c.OnHTML("a:contains('Más noticias')", func(e *colly.HTMLElement) {
+		*canContinue = true
+	})
+
+	c.OnHTML("a:contains('Volver a la página anterior')", func(e *colly.HTMLElement) {
+		*canGoBack = true
 	})
 }
 
 func setupContentCollector(c *colly.Collector, articles *[]Article, mu *sync.Mutex) *colly.Collector {
 	contentCollector := c.Clone()
 
-	contentCollector.OnHTML(".noticia-detalle", func(e *colly.HTMLElement) {
+	contentCollector.OnHTML("article.post", func(e *colly.HTMLElement) {
 		article := parseArticle(e)
 
 		if article != nil {
@@ -114,54 +109,76 @@ func setupContentCollector(c *colly.Collector, articles *[]Article, mu *sync.Mut
 func parseArticle(e *colly.HTMLElement) *Article {
 	converter := md.NewConverter("", true, nil)
 
-	info := e.ChildText(".noticia-detalle-info")
-	title := e.ChildText(".titulo2 ")
-	category := e.ChildText(".titulo")
-	classes := e.DOM.AttrOr("class", "")
+	categoryId := e.DOM.AttrOr("class", "")
+	// find the string that contains "category-" in the categoryId string
+	categoryId = strings.Split(categoryId, "category-")[1]
+	categoryName := strings.ToUpper(categoryId[:1]) + categoryId[1:]
 
-	re := regexp.MustCompile(`categoria_(\d+)`)
-	matches := re.FindStringSubmatch(classes)
-	if len(matches) < 2 {
-		log.Error("Error: the categoryId was not found for the article: %s", title)
-		return nil
+	articleType := e.ChildText("header .post-block__volanta")
+
+	title := e.ChildText("header h1")
+
+	subtitle := e.ChildText("header .article__excerpt")
+
+	e.DOM.Find(".container>div>aside.border-t>a").Remove().End().Text()
+	date := e.ChildText(".container>div>aside.border-t")
+	date = strings.ReplaceAll(date, "|", "")
+	date = strings.TrimSpace(date)
+
+	// remove the elements that match this classes:
+	ignoredElements := []string{
+		".author",
+		"aside",
+		".subscribe-to-whatsapp",
+		"figure",
 	}
 
-	categoryId, err := strconv.Atoi(matches[1])
+	for _, element := range ignoredElements {
+		e.DOM.Find(".article__content "+element).Remove().End()
+	}
+
+	articleBody := e.ChildText(".article__content")
+
+	// create the following markdown structure:
+	/*
+		Title
+		Subtitle
+		Date
+		Category
+		Body
+		Link
+	*/
+
+	finalBody := fmt.Sprintf("%s\n%s\n%s\n%s\n%s\n%s", title, subtitle, date, categoryName, articleBody, e.Request.URL.String())
+
+	markdown, err := converter.ConvertString(finalBody)
 	if err != nil {
-		log.Error("Error parsing categoryId: %v", err)
+		log.Error("Error converting html to markdown: %v", err)
 		return nil
 	}
 
-	articleBody, err := e.DOM.Find(".resumen").Html()
-	if err != nil {
-		log.Error("Error getting article body: %v", err)
-		return nil
+
+	log.Infof("title: %s", title)
+	log.Infof("subtitle: %s, articleType: %s", subtitle, articleType)
+	log.Infof("date: %s", date)
+	log.Infof("categoryName: %s", categoryName)
+	log.Infof("articleBody: %s", articleBody)
+	log.Infof("link: %s", e.Request.URL.String())
+
+	return &Article{
+		Title:      title,
+		Date:       date,
+		Category:   categoryName,
+		CategoryId: categoryId,
+		Body:       markdown,
+		Link:       e.Request.URL.String(),
 	}
 
-	elementsToRemove := []string{
-		"#publi-entre-parrafos",
-		".share-block",
-		".owl-carousel",
-		"[href*='javascript:void(0)']",
-		".qpch2",
-	}
 
-	for _, element := range elementsToRemove {
-		articleBody, err = e.DOM.Find(element).Remove().End().Find(".resumen").Html()
-		if err != nil {
-			log.Error("Error removing element %s: %v", element, err)
-			return nil
-		}
-	}
 
-	titleElement := e.DOM.Find(".titulo2")
-	titleElement.SetHtml("<h1>" + titleElement.Text() + "</h1>")
-	articleTitle, err := titleElement.Html()
-	if err != nil {
-		log.Error("Error getting title: %v", err)
-		return nil
-	}
-	articleBody = articleTitle + articleBody
+
+
+	/*
 
 	markdown, err := converter.ConvertString(articleBody)
 
@@ -184,6 +201,7 @@ func parseArticle(e *colly.HTMLElement) *Article {
 		Body:       markdown,
 		Link:       e.Request.URL.String(),
 	}
+	*/
 }
 
 func setupOnScrapedCallback(c *colly.Collector, contentCollector *colly.Collector, links *[]string, wg *sync.WaitGroup) {
@@ -207,7 +225,7 @@ func setupOnScrapedCallback(c *colly.Collector, contentCollector *colly.Collecto
 
 func ScrapePage(page int) ([]Article, bool, bool, error) {
 	c := colly.NewCollector(
-		colly.AllowedDomains("www.quepensaschacabuco.com"),
+		colly.AllowedDomains("chacabucoenred.com"),
 	)
 
 	var (
@@ -223,7 +241,13 @@ func ScrapePage(page int) ([]Article, bool, bool, error) {
 
 	setupCollectors(c, &links, &articles, &mu, &wg, &canContinue, &canGoBack)
 
-	err := c.Visit(fmt.Sprintf("https://www.quepensaschacabuco.com/entradas/%d/", page))
+	url := ""
+	if (page < 2) {
+		url = "https://chacabucoenred.com/"
+	} else {
+		url = fmt.Sprintf("https://chacabucoenred.com/page/%d/", page)
+	}
+	err := c.Visit(url)
 	if err != nil {
 		return nil, false, false, err
 	}

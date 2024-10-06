@@ -15,6 +15,7 @@ func (m Model) View() string {
 			return fmt.Sprintf("\nOcurrió un error: %v\n\n", m.Err)
 	}
 
+	/* TODO: Generate tabs with the categories
 	navigationMenuItems := []string{
 			"Todas",
 			"Policiales",
@@ -23,6 +24,7 @@ func (m Model) View() string {
 	}
 
 	// Render the navigation menu, it shows the current category and the selected entry
+
 	var tabItems []string
 	for i, item := range navigationMenuItems {
 			if m.SelectedEntry != nil {
@@ -41,12 +43,14 @@ func (m Model) View() string {
 					tabItems = append(tabItems, m.renderer.NewStyle().Render(item))
 			}
 	}
+			*/
 
 	title := m.renderer.NewStyle().
 			Width(35).
 			Foreground(lipgloss.Color("8")).
 			Render(fmt.Sprintf("Chacabuco en Red TUI - Page %d", m.CurrentPage))
 
+	/* TODO: Generate tabs with the categories
 	tabStyle := m.renderer.NewStyle().
 			Border(lipgloss.NormalBorder(), false, false, false, true).
 			BorderForeground(lipgloss.Color("8")).
@@ -59,11 +63,12 @@ func (m Model) View() string {
 	}
 
 	navigationMenuContent := lipgloss.JoinHorizontal(lipgloss.Center, styledTabs...)
+	*/
 
 	titleAndNavigation := lipgloss.JoinHorizontal(
 			lipgloss.Center,
 			title,
-			navigationMenuContent,
+			// navigationMenuContent,
 	)
 
 	titleAndNavigation = m.renderer.NewStyle().
@@ -140,31 +145,18 @@ if (m.IsFirstFetch) {
 	)
 }
 
-func filterEntriesByCategory(entries []scraper.Article, currentCategory int) []scraper.Article {
-	if currentCategory == 0 {
+func filterEntriesByCategory(entries []scraper.Article, currentCategory string) []scraper.Article {
+	if currentCategory == "" {
 			return entries
 	}
 
 	var filteredEntries []scraper.Article
 	for _, entry := range entries {
-			if entry.CategoryId == getCategoryIdByCategory(currentCategory) {
+			if entry.CategoryId == currentCategory {
 					filteredEntries = append(filteredEntries, entry)
 			}
 	}
 	return filteredEntries
-}
-
-func getCategoryIdByCategory(category int) int {
-	switch category {
-	case 1:
-			return 8 // Policiales
-	case 2:
-			return 48 // Sociedad
-	case 3:
-			return 75 // Automotores
-	default:
-			return 0 // All
-	}
 }
 
 func entriesToListItems(entries []scraper.Article) []list.Item {

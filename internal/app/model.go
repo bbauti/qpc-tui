@@ -30,7 +30,7 @@ type Model struct {
 	CanGoBack   bool
 	Err         error
 
-	CurrentCategory int // 0: all (0), 1: policiales (8), 2: sociedad (48), 3: automotores (75)
+	CurrentCategory string
 	SelectedEntry		*scraper.Article
 
 	Keys         ui.KeyMap
@@ -78,10 +78,10 @@ func InitialModel(s ssh.Session) (tea.Model, []tea.ProgramOption) {
 		TxtStyle:  txtStyle,
 		QuitStyle: quitStyle,
 
-		CurrentCategory: 0,
+		CurrentCategory: "",
 		SelectedEntry: nil,
 
-		CurrentPage: 0,
+		CurrentPage: 1,
 		Spinner:     sp,
 		Fetching:    true,
 		IsFirstFetch: true,
